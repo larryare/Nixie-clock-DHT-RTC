@@ -77,9 +77,6 @@ void setup() {
   pinMode(DECODER_C, OUTPUT);
   pinMode(DECODER_D, OUTPUT);
 
-  pinMode(SET_HOUR, INPUT_PULLUP);
-  pinMode(SET_MINUTE, INPUT_PULLUP);
-
   pinMode(HOUR_10, OUTPUT);
   pinMode(HOUR_1, OUTPUT);
   pinMode(MINUTE_10, OUTPUT);
