@@ -6,33 +6,34 @@
 RTClib myRTC;
 
 #define DHTPIN 12
-#define DHTTYPE    DHT22
+#define DHTTYPE DHT22
 
-#define DECODER_C     9
-#define DECODER_B     10
+#define DECODER_C 9
+#define DECODER_B 10
 
-#define DECODER_D     8
-#define DECODER_A     11
+#define DECODER_D 8
+#define DECODER_A 11
 
-#define HOUR_10       3
-#define HOUR_1        2
-#define MINUTE_10     4
-#define MINUTE_1      5
+#define HOUR_10 3
+#define HOUR_1 2
+#define MINUTE_10 4
+#define MINUTE_1 5
 
-#define DISPLAY_MS    2
-#define BLANKING_US   200
+#define DISPLAY_MS 2
+#define BLANKING_US 200
 
-#define FILTER_ALPHA  0.1
+#define FILTER_ALPHA 0.1
 
 DHT dht(DHTPIN, DHTTYPE);
-auto DHTtimer = timer_create_default();
 unsigned long starttime = 0;
 unsigned long endtime = 0;
 bool showDHT = false;
 float h, t;
 
 int spoolMinute = 0;
-int spoolHour = 0;
+
+bool spool = false;
+
 auto timer = timer_create_default();
 int lastMinute;
 int lastHour;
@@ -49,11 +50,11 @@ void displayDigit(unsigned short digit, unsigned short pin) {
 }
 
 void calcRoll() {
-  if (spoolMinute < 9) {
+  if (spoolMinute < 9 && spool == true) {
     spoolMinute++;
-  }
-  else {
-    spoolMinute = 0;
+  } else {
+    spoolMinute = 4;
+    spool = false;
   }
 }
 
@@ -83,42 +84,41 @@ void setup() {
   pinMode(MINUTE_1, OUTPUT);
 
   dht.begin();
-  DHTtimer.every(30000, readDHT);
+  timer.every(30000, readDHT);
 
   timer.every(50, calcRoll);
   Wire.begin();
-
 }
 
 void loop() {
 
-  DHTtimer.tick();
+  timer.tick();
   DateTime now = myRTC.now();
+
+  if (lastMinute < now.minute()) {
+    spool = true;
+  }
 
   if ((endtime - starttime) >= 3000) {
     showDHT = false;
     starttime = 0;
     endtime = 0;
-    lastMinute -= 1;
+    spool = true;
   }
 
 
-  if (lastMinute < now.minute() || spoolMinute > 0) {
-    timer.tick();
+  if (spool == true) {
     displayDigit(spoolMinute, HOUR_10);
     displayDigit(spoolMinute, HOUR_1);
     displayDigit(spoolMinute, MINUTE_10);
     displayDigit(spoolMinute, MINUTE_1);
-  }
-  else if (showDHT == true)
-  {
+  } else if (showDHT == true) {
     displayDigit((int)round(t) / 10, HOUR_10);
     displayDigit((int)round(t) % 10, HOUR_1);
     displayDigit((int)round(h) / 10, MINUTE_10);
     displayDigit((int)round(h) % 10, MINUTE_1);
     endtime = millis();
-  }
-  else {
+  } else {
     displayDigit(now.hour() / 10, HOUR_10);
     displayDigit(now.hour() % 10, HOUR_1);
     displayDigit(now.minute() / 10, MINUTE_10);
